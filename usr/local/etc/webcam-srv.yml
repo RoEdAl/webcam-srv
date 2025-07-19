@@ -1,0 +1,41 @@
+webcams:
+  cam1:
+    enable: false
+    mode: capture-v4l
+    video_size: hd1080
+    input_format: h264
+    framerate: 30
+
+  cam2:
+    enable: false
+    mode: re-encode-h264
+    video_size: qhd
+    input_format: mjpeg
+    framerate: 15
+    h264:
+      g: 45
+      b: 600k
+  
+  cam3:
+    enable: false
+    mode: capture-v4l
+    video_size: hd720
+    input_format: h264
+    framerate: 30
+  
+  cap4:
+    enable: true
+    mode: capture-v4l
+    video_size: hd720
+    input_format: mjpeg
+    framerate: 20
+    h264:
+      g: 60
+      b: 600k
+  
+  trust:
+    mode: encode-h264
+    framerate: 10
+    h264:
+      b: 400k
+      g: 30

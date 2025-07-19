@@ -1,0 +1,5 @@
+#!/bin/bash
+
+set -e
+
+exec task -d /usr/local/lib/webcam-srv -o prefixed -x "$@"

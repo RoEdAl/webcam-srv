@@ -1,0 +1,18 @@
+[Unit]
+Wants=network.target
+
+[Service]
+Type=exec
+ExecStartPre=/usr/local/bin/webcam-srv make-config-file %t/%N/%N.yml
+ExecStart=/usr/local/bin/%N %t/%N/%N.yml
+User=%N
+Group=%N
+DynamicUser=yes
+RuntimeDirectory=%N
+NoNewPrivileges=yes
+ProtectHome=yes
+#CPUSchedulingPolicy=rr
+MemorySwapMax=0
+
+[Install]
+WantedBy=multi-user.target

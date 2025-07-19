@@ -1,0 +1,10 @@
+SUBSYSTEM!="sound", GOTO="alsa_naming_end"
+ACTION!="add", GOTO="alsa_naming_end"
+KERNEL!="card?", GOTO="alsa_naming_end"
+
+ATTRS{idProduct}=="1478", ATTRS{idVendor}=="23c5", ATTR{id}="cam1"
+ATTRS{idProduct}=="636b", ATTRS{idVendor}=="0c45", ATTR{id}="cam2"
+ATTRS{idProduct}=="9331", ATTRS{idVendor}=="05a3", ATTR{id}="cam3"
+ATTRS{idProduct}=="2109", ATTRS{idVendor}=="534d", ATTR{id}="cap1"
+
+LABEL="alsa_naming_end"

@@ -1,0 +1,62 @@
+logLevel: info
+logDestinations: [stdout]
+
+readTimeout: 5s
+writeTimeout: 5s
+writeQueueSize: 128
+udpMaxPayloadSize: 1472
+
+authMethod: internal
+
+authInternalUsers:
+- user: any
+  pass:
+  ips: []
+  permissions:
+  - action: read
+    path:
+  - action: playback
+    path:
+
+- user: any
+  pass:
+  ips: ['127.0.0.1', '::1']
+  permissions:
+  - action: publish
+    path:
+  - action: api
+  - action: metrics
+  - action: pprof
+
+rtsp: true
+rtspTransports: [udp, tcp]
+rtspEncryption: 'false'
+rtspAddress: :8554
+rtspsAddress: :8322
+rtpAddress: :8000
+rtcpAddress: :8001
+rtspAuthMethods: [basic]
+
+rtmp: false
+
+hls: true
+hlsAddress: :8888
+hlsEncryption: false
+hlsVariant: lowLatency
+hlsSegmentCount: 6
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+hlsSegmentMaxSize: 10M
+hlsMuxerCloseAfter: 60s
+
+webrtc: true
+webrtcAddress: :8889
+webrtcEncryption: false
+webrtcAllowOrigin: '*'
+webrtcLocalUDPAddress: :8189
+webrtcIPsFromInterfaces: true
+webrtcHandshakeTimeout: 10s
+webrtcTrackGatherTimeout: 2s
+webrtcSTUNGatherTimeout: 5s
+
+srt: false

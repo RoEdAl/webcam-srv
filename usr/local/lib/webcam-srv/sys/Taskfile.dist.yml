@@ -1,0 +1,15 @@
+
+version: '3'
+
+tasks:
+  overlay-fs-enable:
+    desc: Enable Overlay Filesystem
+    cmds:
+      - raspi-config nonint enable_overlayfs
+      - raspi-config nonint enable_bootro
+  overlay-fs-disable:
+    desc: Disable Overlay Filesystem
+    cmds:
+      - cmd: raspi-config nonint disable_overlayfs
+      - cmd: raspi-config nonint disable_bootro
+        ignore_error: true

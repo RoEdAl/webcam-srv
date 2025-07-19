@@ -1,0 +1,284 @@
+version: '3'
+
+tasks:
+  install-dir:
+    internal: on
+    run: when_changed
+    requires:
+      vars:
+        - SRC_PATH
+        - DST_PATH
+    status:
+      - test -d {{.DST_PATH}}
+    cmds:
+      - mkdir -p {{.DST_PATH}}
+      - touch -d -r {{.SRC_PATH}} {{.DST_PATH}}
+
+  install-file:
+    internal: on
+    run: when_changed
+    requires:
+      vars:
+        - SRC_PATH
+        - DST_PATH
+    status:
+      - test -s {{.DST_PATH}}
+      - test ! {{.SRC_PATH}} -ot {{.DST_PATH}}
+    cmds:
+      - cp --preserve=mode,timestamps {{.SRC_PATH}} {{.DST_PATH}}
+
+  install-modprobe-conf:
+    internal: on
+    requires:
+      vars:
+        - SRC_DIR
+        - DST_DIR
+        - CONF_FILE
+    vars:
+      SRC_PATH: '{{joinPath .SRC_DIR .CONF_FILE}}'
+      DST_PATH: '{{joinPath .DST_DIR .CONF_FILE}}'
+    cmds:
+      - task: install-file
+        vars:
+          SRC_PATH:
+            ref: .SRC_PATH
+          DST_PATH:
+            ref: .DST_PATH
+    
+  install-etc-modprobe-d:
+    internal: on
+    vars:
+      SRC_DIR: '{{joinPath .TASKFILE_DIR "etc" "modprobe.d"}}'
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "etc" "modprobe.d"}}'
+      MODPROBE_CONF:
+        - alsa-base
+        - snd-usb-audio
+        - uvcvideo
+    cmds:
+      - task: install-dir
+        vars:
+          SRC_PATH:
+            ref: .SRC_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - for: {var: MODPROBE_CONF}
+        task: install-modprobe-conf
+        vars:
+          SRC_DIR:
+            ref: .SRC_DIR
+          DST_DIR:
+            ref: .DST_DIR
+          CONF_FILE: '{{.ITEM}}.conf'
+
+  install-sysusers-conf:
+    internal: on
+    requires:
+      vars:
+        - SRC_DIR
+        - DST_DIR
+        - CONF_FILE
+    vars:
+      SRC_PATH: '{{joinPath .SRC_DIR .CONF_FILE}}'
+      DST_PATH: '{{joinPath .DST_DIR .CONF_FILE}}'
+    cmds:
+      - task: install-file
+        vars:
+          SRC_PATH:
+            ref: .SRC_PATH
+          DST_PATH:
+            ref: .DST_PATH
+
+  install-sysusers-d:
+    internal: on
+    vars:
+      SRC_DIR: '{{joinPath .TASKFILE_DIR "usr" "local" "lib" "sysusers.d"}}'
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "lib" "sysusers.d"}}'
+      SYSUSERS_CONF:
+        - mediamtx
+    cmds:
+      - task: install-dir
+        vars:
+          SRC_PATH:
+            ref: .SRC_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - for: {var: SYSUSERS_CONF}
+        task: install-sysusers-conf
+        vars:
+          SRC_DIR:
+            ref: .SRC_DIR
+          DST_DIR:
+            ref: .DST_DIR
+          CONF_FILE: '{{.ITEM}}.conf'
+
+  install-udev-rule:
+    internal: on
+    requires:
+      vars:
+        - SRC_DIR
+        - DST_DIR
+        - CONF_FILE
+    vars:
+      SRC_PATH: '{{joinPath .SRC_DIR .CONF_FILE}}'
+      DST_PATH: '{{joinPath .DST_DIR .CONF_FILE}}'
+    cmds:
+      - task: install-file
+        vars:
+          SRC_PATH:
+            ref: .SRC_PATH
+          DST_PATH:
+            ref: .DST_PATH
+
+  install-udev-rules-d:
+    internal: on
+    vars:
+      SRC_DIR: '{{joinPath .TASKFILE_DIR "usr" "local" "lib" "udev" "rules.d"}}'
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "lib" "udev" "rules.d"}}'
+      UDEV_RULES:
+        - 80-v4l-ids
+        - 95-alsa-ids
+    cmds:
+      - task: install-dir
+        vars:
+          SRC_PATH:
+            ref: .SRC_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - for: {var: UDEV_RULES}
+        task: install-udev-rule
+        vars:
+          SRC_DIR:
+            ref: .SRC_DIR
+          DST_DIR:
+            ref: .DST_DIR
+          CONF_FILE: '{{.ITEM}}.rules'
+
+  install-systemd-service:
+    internal: on
+    requires:
+      vars:
+        - SRC_DIR
+        - DST_DIR
+        - SYSTEMD_SERVICE
+    vars:
+      SRC_PATH: '{{joinPath .SRC_DIR .SYSTEMD_SERVICE}}'
+      DST_PATH: '{{joinPath .DST_DIR .SYSTEMD_SERVICE}}'
+    cmds:
+      - task: install-file
+        vars:
+          SRC_PATH:
+            ref: .SRC_PATH
+          DST_PATH:
+            ref: .DST_PATH
+
+  install-systemd-system:
+    internal: on
+    vars:
+      SRC_DIR: '{{joinPath .TASKFILE_DIR "usr" "local" "lib" "systemd" "system"}}'
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "lib" "systemd" "system"}}'
+      SYSTEMD_SERVICES:
+        - mediamtx
+    cmds:
+      - task: install-dir 
+        vars:
+          SRC_PATH:
+            ref: .SRC_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - for: {var: SYSTEMD_SERVICES}
+        task: install-systemd-service
+        vars:
+          SRC_DIR:
+            ref: .SRC_DIR
+          DST_DIR:
+            ref: .DST_DIR
+          SYSTEMD_SERVICE: '{{.ITEM}}.service'
+
+  install-webcam-srv-lib:
+    internal: on
+    vars:
+      SRC_DIR: '{{joinPath .TASKFILE_DIR "usr" "local" "lib" "webcam-srv"}}'
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "lib" "webcam-srv"}}'
+    cmds:
+      - task: install-dir
+        vars:
+          SRC_PATH:
+            ref: .SRC_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - cp -Rduv --preserve=mode,timestamps {{.SRC_DIR}}/* {{.DST_DIR}}
+
+  install-webcam-srv-bin:
+    internal: on
+    vars:
+      SRC_DIR: '{{joinPath .TASKFILE_DIR "usr" "local" "bin"}}'
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "bin"}}'
+      WEBCAM_BIN:
+        - webcam-srv
+    cmds:
+      - task: install-dir
+        vars:
+          SRC_PATH:
+            ref: .SRC_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - for: {var: WEBCAM_BIN}
+        task: install-file
+        vars:
+          SRC_PATH: '{{joinPath .SRC_DIR .ITEM}}'
+          DST_PATH: '{{joinPath .DST_DIR .ITEM}}'
+
+  install-webcam-srv-etc:
+    internal: on
+    vars:
+      SRC_DIR: '{{joinPath .TASKFILE_DIR "usr" "local" "etc"}}'
+      DST_DIR: '{{joinPath (.DSTDIR | default "") "/" "usr" "local" "etc"}}'
+      CONF_FILES:
+        - mediamtx.yml
+        - webcam-srv.yml
+    cmds:
+      - task: install-dir
+        vars:
+          SRC_PATH:
+            ref: .SRC_DIR
+          DST_PATH:
+            ref: .DST_DIR
+      - for: {var: CONF_FILES}
+        task: install-file
+        vars:
+          SRC_PATH: '{{joinPath .SRC_DIR .ITEM}}'
+          DST_PATH: '{{joinPath .DST_DIR .ITEM}}'          
+
+  install-webcam-srv:
+    internal: on
+    deps:
+      - task: install-webcam-srv-lib
+      - task: install-webcam-srv-bin
+      - task: install-webcam-srv-etc
+
+  install-usr-local:
+    internal: on
+    deps:
+      - task: install-sysusers-d
+      - task: install-udev-rules-d
+      - task: install-systemd-system
+    cmds:
+      - task: install-webcam-srv
+
+  post-install:
+    internal: on
+    run: once
+    desc: Post installation tasks
+    status:
+      - exit {{.DSTDIR | empty | ternary 1 0}}
+    cmds:
+      - systemctl -q daemon-reload
+      - systemctl -q --no-block restart systemd-sysusers
+
+  install:
+    desc: Install webcam-srv
+    deps:
+      - task: install-etc-modprobe-d
+      - task: install-usr-local
+    cmds:
+      - task: post-install
