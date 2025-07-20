@@ -32,7 +32,7 @@ vars:
         - copyts
         - [filter_threads, 1]
         - [filter_complex_threads, 1]
-        - [thread_queue_size, 30]
+        - [thread_queue_size, 32]
       video-overlay-input:
         - [i, '{{joinPath .ROOT_TASKFILE "video.png"}}']
       video-overlay-filter:
