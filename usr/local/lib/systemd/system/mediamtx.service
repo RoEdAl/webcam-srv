@@ -3,7 +3,7 @@ Wants=network.target
 
 [Service]
 Type=exec
-ExecStartPre=/usr/local/bin/webcam-srv make-config-file %t/%N/%N.yml
+ExecStartPre=/usr/local/bin/webcam-srv webcam-ctrls make-config-file -- %t/%N/%N.yml
 ExecStart=/usr/local/bin/%N %t/%N/%N.yml
 User=%N
 Group=%N

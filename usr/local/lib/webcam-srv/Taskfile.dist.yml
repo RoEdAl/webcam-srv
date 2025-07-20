@@ -39,7 +39,7 @@ definitions:
     vars: &hw-encoder-vars
       HW_ENCODER_V4L_PRODUCT: &hw_encoder_v4l_product
         sh: 'udevadm info -q property --property=ID_V4L_PRODUCT --value {{.HW_ENCODER_DEV_PATH}} || true'
-      HW_ENCODER_NAME: &hw_encoder_name '{{.ENCODER_V4L_PRODUCT | default "Hardware Codec"}}'
+      HW_ENCODER_NAME: &hw_encoder_name '{{.HW_ENCODER_V4L_PRODUCT | default "Hardware Codec"}}'
 
   FF_OPTS: &ff_opts
     - '#common'
@@ -181,6 +181,7 @@ tasks:
       WEBCAM_CFG: *webcam_cfg
       WEBCAM_NAME: *webcam_name
       RTSP_URI: *rtsp_uri
+      INPUT_FORMAT: '{{.WEBCAM_CFG | dig "input_format" "mjpeg"}}'
       FRAMERATE: '{{.WEBCAM_CFG | dig "framerate" .DEF_CFG.framerate}}'
       RTSP_URI: *rtsp_uri
       HW_ENCODER_V4L_PRODUCT: *hw_encoder_v4l_product
@@ -223,7 +224,43 @@ tasks:
         vars:
           WEBCAM_PATH: '{{.KEY}}'
           WEBCAM_JSON: '{{toJson .ITEM}}'
-          RTSP_PORT: '{{.RTSP_PORT | default 8556}}'
+          RTSP_PORT: '{{.RTSP_PORT | default 8554}}'
+
+  internal-webcam-ctrls:
+    internal: true
+    requires:
+      vars:
+        - V4L_DEV
+        - V4L_CTRLS
+    vars:
+      CTRLS_STR: >-
+        {{$c := list -}}
+        {{range $ctrl, $val := .V4L_CTRLS | fromJson -}}
+          {{$c = list $ctrl ($val | toString) | join "=" | append $c -}}
+        {{end -}}
+        {{$c | join "," -}}
+    cmds:
+      - cmd: '{{if empty .CTRLS_STR | not }}v4l2-ctl -d {{.V4L_DEV}} --set-ctrl {{.CTRLS_STR}}{{end}}'
+        ignore_error: true
+
+  webcam-ctrls:
+    desc: Webcam controls
+    vars:
+      WEBCAM_CONFIG_STR:
+        sh: cat {{joinPath (.DSTDIR | default "") .WEBCAM_CONFIG_PATH}}
+      WEBCAM_CONFIG:
+        ref: fromYaml .WEBCAM_CONFIG_STR
+      WEBCAMS:
+        ref: get .WEBCAM_CONFIG "webcams"
+    cmds:
+      - for: { var: WEBCAMS }
+        task: >-
+          {{$enable := .ITEM | dig "enable" true -}}
+          {{if $enable | kindIs "bool" | not }}{{fail "\"enable\" must have a boolean value"}}{{end -}}
+          {{if hasKey .ITEM "ctrls" | and $enable}}internal-webcam-ctrls{{else}}webcam-disabled{{end}}
+        vars:
+          V4L_DEV: /dev/v4l/{{.KEY}}
+          V4L_CTRLS: '{{.ITEM | dig "ctrls" (dict) | toJson}}'
 
   default:
     desc: Create configuration file for MediaMTX service
