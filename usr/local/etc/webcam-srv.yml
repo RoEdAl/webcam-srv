@@ -22,6 +22,12 @@ webcams:
     video_size: hd720
     input_format: h264
     framerate: 30
+    ctrls:
+      brightness: 118
+      contrast: 90
+      saturation: 125
+      hue: 125
+      white_balance_automatic: 0
   
   cap4:
     enable: false
@@ -39,13 +45,12 @@ webcams:
     ctrls:
       brightness: 15
       contrast: 40
-      saturation: 40
-      hue: 15
+      saturation: 65
+      hue: -15
+      gamma: 180      
       white_balance_automatic: 0
-      gamma: 180
       gain: 0
       power_line_frequency: 0
-      white_balance_temperature: 4600
       sharpness: 4
       backlight_compensation: 0
     h264:
