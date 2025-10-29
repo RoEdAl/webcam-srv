@@ -12,6 +12,21 @@ webcams:
     video_size: qhd
     input_format: mjpeg
     framerate: 15
+    ctrls:
+      brightness: 0
+      contrast: 24
+      saturation: 37
+      hue: -40
+      white_balance_automatic: 0
+      gamma: 186
+      gain: 0
+      power_line_frequency: 0
+      white_balance_temperature: 5900
+      sharpness: 3
+      backlight_compensation: 0
+      auto_exposure: 3
+      exposure_dynamic_framerate: 1
+      focus_automatic_continuous: 1
     h264:
       g: 45
       b: 600k
@@ -56,3 +71,17 @@ webcams:
     h264:
       b: 400k
       g: 30
+
+easycap:
+  mode: capture-v4l
+  input_format: mjpeg
+  framerate: 60
+  ctrls:
+    brightness: 140
+    contrast: 140
+    saturation: 45
+    hue: 10
+    gamma: 4
+    gain: 0
+    power_line_frequency: 0
+    sharpness: 128

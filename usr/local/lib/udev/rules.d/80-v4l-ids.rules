@@ -8,5 +8,6 @@ ATTRS{idProduct}=="636b", ATTRS{idVendor}=="0c45", SYMLINK+="v4l/cam2", TAG+="sy
 ATTRS{idProduct}=="9331", ATTRS{idVendor}=="05a3", SYMLINK+="v4l/cam3", TAG+="systemd", ENV{SYSTEMD_ALIAS}="/dev/v4l/cam3"
 ATTRS{idProduct}=="2109", ATTRS{idVendor}=="534d", SYMLINK+="v4l/cap1", TAG+="systemd", ENV{SYSTEMD_ALIAS}="/dev/v4l/cap1"
 ATTRS{idProduct}=="62c0", ATTRS{idVendor}=="0c45", SYMLINK+="v4l/trust", TAG+="systemd", ENV{SYSTEMD_ALIAS}="/dev/v4l/trust"
+ATTRS{idProduct}=="5555", ATTRS{idVendor}=="18ec", SYMLINK+="v4l/easycap", TAG+="systemd", ENV{SYSTEMD_ALIAS}="/dev/v4l/easycap"
 
 LABEL="v4l_naming_end"
