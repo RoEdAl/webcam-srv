@@ -273,7 +273,8 @@ tasks:
       - exit {{.DSTDIR | empty | ternary 1 0}}
     cmds:
       - systemctl -q daemon-reload
-      - systemctl -q --no-block restart systemd-sysusers
+      - touch /usr/local
+      - echo System reboot is required!
 
   install:
     desc: Install webcam-srv
