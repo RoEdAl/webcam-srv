@@ -72,16 +72,16 @@ webcams:
       b: 400k
       g: 30
 
-easycap:
-  mode: capture-v4l
-  input_format: mjpeg
-  framerate: 60
-  ctrls:
-    brightness: 140
-    contrast: 140
-    saturation: 45
-    hue: 10
-    gamma: 4
-    gain: 0
-    power_line_frequency: 0
-    sharpness: 128
+  easycap:
+    mode: capture-v4l
+    input_format: mjpeg
+    framerate: 60
+    ctrls:
+      brightness: 140
+      contrast: 140
+      saturation: 45
+      hue: 10
+      gamma: 4
+      gain: 0
+      power_line_frequency: 0
+      sharpness: 128
