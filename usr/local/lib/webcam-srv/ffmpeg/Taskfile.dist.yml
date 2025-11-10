@@ -1,6 +1,11 @@
 version: '3'
 
 vars:
+  FONT_FILE: /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf
+  FONT_SIZE: 14
+  TIME_TEXT: "%{localtime\\:%x %X}"
+  TEXT_COLOR: 'white'
+  TEXT_BG_COLOR: 'black@0.25'
   INITIAL_FRAMES_TO_SKIP: 20
   DISCARD_FILTERS:
     - 'setts=ts=if(not(eq(PREV_INPTS,NOPTS)+eq(PREV_INDTS,NOPTS))*(gte(PREV_INPTS,PTS)+gte(PREV_INDTS,DTS)),NOPTS,TS)'
@@ -17,7 +22,23 @@ vars:
     {{range .H264_FILTERS}}{{$f = append $f (. | replace "," "\\,")}}{{end -}}
     {{$f | join ","}}
   OVERLAY_FILTERS:
-    - '[0:v][1:v] overlay=0:0'
+    - >-
+      [0:v][1:v] overlay=
+      x=2:
+      y=2:
+      enable=lt(mod(t,2),1)
+    - >-
+      drawtext=
+      fontfile='{{.FONT_FILE}}':
+      fontsize={{.FONT_SIZE}}:
+      text='{{.TIME_TEXT}}':
+      fontcolor={{.TEXT_COLOR}}:
+      alpha=0.75:
+      box=1:
+      boxcolor={{.TEXT_BG_COLOR}}:
+      boxborderw=2:
+      x=w-text_w-4:
+      y=4
   OVERLAY_FILTER_STR: >-
     {{$f := list -}}
     {{range .OVERLAY_FILTERS}}{{$f = append $f (. | replace "," "\\,")}}{{end -}}
@@ -34,7 +55,9 @@ vars:
         - [filter_complex_threads, 1]
         - [thread_queue_size, 32]
       video-overlay-input:
-        - [i, '{{joinPath .ROOT_TASKFILE "video.png"}}']
+        - [width, 22]
+        - [height, 22]
+        - [i, '{{joinPath .TASKFILE_DIR "webcam.svg"}}']
       video-overlay-filter:
         - [filter_complex, '{{.OVERLAY_FILTER_STR}}']
       rtsp:
@@ -84,7 +107,7 @@ tasks:
             {{$cmd = shellQuote $p | append $cmd -}}
           {{end -}}
           echo {{ $cmd | join " " | toJson | b64enc | shellQuote -}}
-    
+
   cmdline-ex:
     desc: Generate path node configuration from specified options and arguments of ffmpeg
     requires:
@@ -98,4 +121,47 @@ tasks:
             ref: '.FF_ARGS | b64dec | fromJson'
           FF_OPTS:
             ref: '.FF_OPTS | b64dec | fromJson'
+
+  shell-script:
+    desc: Generate shell script from specified options and arguments of ffmpeg
+    requires:
+      vars:
+        - FF_OPTS
+        - FF_ARGS
+        - FF_SCRIPT
+    cmds:
+      - cmd: |
+          {{$opts := list}}{{$ko := .KNOWN_OPTS -}}
+          {{range $o := .FF_OPTS -}}
+            {{if kindIs "string" $o -}}
+              {{if hasPrefix "#" $o -}}
+                {{with $k := trimPrefix "#" $o -}}
+                  {{if hasKey $ko $k -}}
+                    {{$opts = get $ko $k | concat $opts -}}
+                  {{end -}}
+                {{end -}}
+                {{continue -}}
+              {{end -}}
+            {{end -}}
+            {{$opts = append $opts . -}}
+          {{end -}}
+          cat << 'EOS' > /run/mediamtx/{{.FF_SCRIPT}}
+          #!/bin/bash -e
+
+          exec ffmpeg \
+          {{range $p := $opts -}}{{"  " -}}
+          {{- if kindIs "string" $p -}}
+            {{list "-" $p | join "" | shellQuote -}}
+          {{else -}}
+            {{list "-" (first $p) | join "" | shellQuote -}}
+            {{range $r := rest $p | toStrings}} {{shellQuote $r}}{{end -}}
+          {{end}} \
+          {{end -}}
+          {{range $p := initial .FF_ARGS -}}
+          {{"  "}}{{shellQuote $p}} \
+          {{end -}}
+          {{"  "}}{{last .FF_ARGS | shellQuote}}
+          EOS
+      - cmd: cat /run/mediamtx/{{.FF_SCRIPT}} 1>&2
+      - cmd: chmod +x /run/mediamtx/{{.FF_SCRIPT}}
 

@@ -1,3 +1,6 @@
+webcam-srv:
+  use-hw-h264-encoder: false
+
 webcams:
   cam1:
     enable: false

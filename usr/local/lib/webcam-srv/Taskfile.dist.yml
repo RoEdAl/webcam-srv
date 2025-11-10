@@ -1,5 +1,10 @@
 version: '3'
 
+includes:
+  ffmpeg:
+    taskfile: ffmpeg
+    internal: true
+
 vars:
   HW_ENCODER_DEV_PATH: /dev/video11
   MEDIAMTX_CONFIG_PATH: /usr/local/etc/mediamtx.yml
@@ -89,18 +94,18 @@ definitions:
       {{.FF_ARGS | toJson | b64enc | list "FF_ARGS" | join "=" | shellQuote}}
       {{.TASK_EXE}} -s -x -d {{joinPath .TASKFILE_DIR "ffmpeg"}} cmdline-ex
   FF_CMDLINE: &ff_cmdline
-    ref: .FF_CMDLINE_B64 | b64dec | fromJson      
+    ref: .FF_CMDLINE_B64 | b64dec | fromJson
   RE_FF_CMDLINE_B64: &re_ff_cmdline_b64
     sh: >-
       env
       {{.RE_FF_OPTS | toJson | b64enc | list "FF_OPTS" | join "=" | shellQuote}}
       {{.RE_FF_ARGS | toJson | b64enc | list "FF_ARGS" | join "=" | shellQuote}}
-      {{.TASK_EXE}} -s -x -d {{joinPath .TASKFILE_DIR "ffmpeg"}} cmdline-ex      
+      {{.TASK_EXE}} -s -x -d {{joinPath .TASKFILE_DIR "ffmpeg"}} cmdline-ex
   RE_FF_CMDLINE: &re_ff_cmdline
     ref: .RE_FF_CMDLINE_B64 | b64dec | fromJson
 
   cmds-return-path: &return-path
-    - cmd: echo {{dict .WEBCAM_PATH .PATH_DEF | toJson | b64enc | shellQuote}}
+    - &return-path-cmd cmd: echo {{dict .WEBCAM_PATH .PATH_DEF | toJson | b64enc | shellQuote}}
 
   cmds-return-path-enc: &return-path-enc
     - cmd: echo {{dict .WEBCAM_PATH .PATH_DEF (list .WEBCAM_PATH "enc" | join "-") (dict) | toJson | b64enc | shellQuote}}
@@ -151,12 +156,12 @@ tasks:
           source: rtsp://localhost:{{.RND_PORT}}/{{.WEBCAM_PATH}}
           rtspTransport: tcp
     cmds: *return-path
-
-  ffmpeg-encode-h264:
-    desc: Capture video from V4L device and encode to H264 stream using hardware encoder then publish encoded stream
+  
+  ffmpeg-hw-encode-h264:
+    desc: >-
+      Capture video from V4L device and encode to H264 stream using hardware encoder
+      then publish encoded stream
     internal: true
-    aliases:
-      - v4l2rtspserver-encode-h264
     requires: *webcam-requires
     vars:
       V4L_DEV: *v4l_dev
@@ -190,16 +195,83 @@ tasks:
         - ['metadata:g', 'title={{.WEBCAM_NAME}}']
         - ['metadata:s:v', 'title={{.WEBCAM_NAME}}']
         - ['metadata:s:v', 'encoder={{.HW_ENCODER_NAME}}']
-        - '#rtsp'
+        - [f, mpegts]
       FF_ARGS:
-        - '{{.RTSP_URI}}'
-      FF_CMDLINE_B64: *ff_cmdline_b64
-      FF_CMDLINE: *ff_cmdline
+        - 'unix:/run/mediamtx/{{.WEBCAM_PATH}}.sock'
       PATH_DEF:
         map:
-          runOnInit: '{{.FF_CMDLINE}}'
-          runOnInitRestart: true        
-    cmds: *return-path
+          runOnInit: '/bin/bash /run/mediamtx/{{.WEBCAM_PATH}}-on-init.sh'
+          runOnInitRestart: true
+          source: 'unix+mpegts:///run/mediamtx/{{.WEBCAM_PATH}}.sock'
+      cmds:
+        - task: ffmpeg:shell-script
+          vars:
+            FF_SCRIPT: '{{.WEBCAM_PATH}}-on-init.sh'
+            FF_OPTS:
+              ref: .FF_OPTS
+            FF_ARGS:
+              ref: .FF_ARGS
+        - cmd: echo {{dict .WEBCAM_PATH .PATH_DEF | toJson | b64enc | shellQuote}}
+
+  ffmpeg-encode-h264:
+    desc: >-
+      Capture video from V4L device and encode to H264 stream using libx264 encoder
+      then publish encoded stream
+    internal: true
+    aliases:
+      - v4l2rtspserver-encode-h264
+    requires: *webcam-requires
+    vars:
+      V4L_DEV: *v4l_dev
+      WEBCAM_NAME_UDEV: *webcam_name_udev
+      WEBCAM_NAME_DEF: *webcam_name_def
+      WEBCAM_CFG: *webcam_cfg
+      WEBCAM_NAME: *webcam_name
+      RTSP_URI: *rtsp_uri
+      INPUT_FORMAT: '{{.WEBCAM_CFG | dig "input_format" "yuyv422"}}'
+      FRAMERATE: '{{.WEBCAM_CFG | dig "framerate" .DEF_CFG.framerate}}'
+      HW_ENCODER_V4L_PRODUCT: *hw_encoder_v4l_product
+      HW_ENCODER_NAME: *hw_encoder_name
+      FF_OPTS:
+        - '#common'
+        - '#discard'
+        - [f, v4l2]
+        - [video_size, '{{.WEBCAM_CFG | dig "video_size" .DEF_CFG.video_size}}']
+        - [input_format, '{{.INPUT_FORMAT}}']
+        - [framerate, '{{.FRAMERATE}}']
+        - [i, '{{.V4L_DEV}}']
+        - '#video-overlay-input'
+        - ['fps_mode:v', vfr]
+        - ['c:v', libx264]
+        - [pix_fmt, yuv420p]
+        - '#video-overlay-filter'
+        - [preset, ultrafast]
+        - [tune, grain]
+        - ['g:v', '{{.WEBCAM_CFG | dig "h264" "g" .FRAMERATE}}']
+        - ['b:v', '{{.WEBCAM_CFG | dig "h264" "b" .DEF_CFG.h264.b}}']
+        - ['bf:v', '{{.WEBCAM_CFG | dig "h264" "bf" .DEF_CFG.h264.bf}}']
+        - '#h264-bsf'
+        - [map_metadata, -1]
+        - ['metadata:g', 'title={{.WEBCAM_NAME}}']
+        - ['metadata:s:v', 'title={{.WEBCAM_NAME}}']
+        - ['metadata:s:v', 'encoder={{.HW_ENCODER_NAME}}']
+        - [f, mpegts]
+      FF_ARGS:
+        - 'unix:/run/mediamtx/{{.WEBCAM_PATH}}.sock'
+      PATH_DEF:
+        map:
+          runOnInit: '/bin/bash /run/mediamtx/{{.WEBCAM_PATH}}-on-init.sh'
+          runOnInitRestart: true
+          source: 'unix+mpegts:///run/mediamtx/{{.WEBCAM_PATH}}.sock'
+    cmds:
+      - task: ffmpeg:shell-script
+        vars:
+          FF_SCRIPT: '{{.WEBCAM_PATH}}-on-init.sh'
+          FF_OPTS:
+            ref: .FF_OPTS
+          FF_ARGS:
+            ref: .FF_ARGS
+      - cmd: echo {{dict .WEBCAM_PATH .PATH_DEF | toJson | b64enc | shellQuote}}
 
   ffmpeg-re-encode-h264:
     desc: Captrue video stream from V4L device. Publish original stream from device and re-encoded H264 stream
@@ -267,7 +339,7 @@ tasks:
     cmds: *return-path-enc
 
   webcam-disabled:
-    internal: true
+    internal: false
 
   webcam-paths:
     desc: Webcam paths
@@ -278,13 +350,18 @@ tasks:
         ref: fromYaml .WEBCAM_CONFIG_STR
       WEBCAMS:
         ref: get .WEBCAM_CONFIG "webcams"
+      USE_HW_H264_ENCODER:
+        ref: .WEBCAM_CONFIG | dig "webcam-srv" "use-hw-h264-encoder" false
     cmds:
       - for: { var: WEBCAMS }
         task: >-
           {{$enable := .ITEM | dig "enable" true -}}
           {{if $enable | kindIs "bool" | not }}{{fail "\"enable\" must have a boolean value"}}{{end -}}
           {{$utility := .ITEM | dig "utility" "ffmpeg" -}}
-          {{if $enable}}{{$utility}}-{{.ITEM | dig "mode" "capture-v4l"}}{{else}}webcam-disabled{{end -}}
+          {{$use_hw_h264_encoder := .USE_HW_H264_ENCODER -}}
+          {{if hasKey .ITEM "use-hw-h264-encoder"}}{{$use_hw_h264_encoder := get .ITEM "use-hw-h264-encoder"}}{{end -}}
+          {{if $use_hw_h264_encoder | kindIs "bool" | not }}{{fail "\"use-hw-h264-encoder\" must have a boolean value"}}{{end -}}
+          {{if $enable}}{{$utility}}-{{if $use_hw_h264_encoder}}hw-{{end}}{{.ITEM | dig "mode" "capture-v4l"}}{{else}}webcam-disabled{{end -}}
         vars:
           WEBCAM_PATH: '{{.KEY}}'
           WEBCAM_JSON: '{{toJson .ITEM}}'
