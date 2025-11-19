@@ -23,7 +23,7 @@ tasks:
         - DST_PATH
     status:
       - test -s {{.DST_PATH}}
-      - test ! {{.SRC_PATH}} -ot {{.DST_PATH}}
+      - test ! {{.SRC_PATH}} -nt {{.DST_PATH}}
     cmds:
       - cp --preserve=mode,timestamps {{.SRC_PATH}} {{.DST_PATH}}
 
@@ -273,7 +273,7 @@ tasks:
       - exit {{.DSTDIR | empty | ternary 1 0}}
     cmds:
       - systemctl -q daemon-reload
-      - touch /usr/local
+      - touch /usr
       - echo System reboot is required!
 
   install:
