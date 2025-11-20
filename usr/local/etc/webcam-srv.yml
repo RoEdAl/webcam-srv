@@ -4,14 +4,14 @@ webcam-srv:
 webcams:
   cam1:
     enable: false
-    mode: capture-v4l
+    mode: capture
     video_size: hd1080
     input_format: h264
     framerate: 30
 
   cam2:
     enable: false
-    mode: re-encode-h264
+    mode: encode-h264
     video_size: qhd
     input_format: mjpeg
     framerate: 15
@@ -36,7 +36,7 @@ webcams:
   
   cam3:
     enable: false
-    mode: capture-v4l
+    mode: capture
     video_size: hd720
     input_format: h264
     framerate: 30
@@ -49,7 +49,7 @@ webcams:
   
   cap4:
     enable: false
-    mode: capture-v4l
+    mode: capture
     video_size: hd720
     input_format: mjpeg
     framerate: 20
@@ -58,6 +58,7 @@ webcams:
       b: 600k
   
   trust:
+    enable: false
     mode: encode-h264
     framerate: 10
     ctrls:
@@ -76,7 +77,8 @@ webcams:
       g: 30
 
   easycap:
-    mode: capture-v4l
+    enable: false
+    mode: capture
     input_format: mjpeg
     framerate: 60
     ctrls:
