@@ -18,13 +18,19 @@ vars:
       h264:
         num_capture_buffers: 8
         num_output_buffers: 16
-        b: 800k
-        bf: 0
+        b: 600k
+        preset: ultrafast
+        tune: zerolatency
+        profile: main
+        crf: 23
       h265:
         num_capture_buffers: 8
         num_output_buffers: 16
-        b: 500k
-        bf: 0        
+        b: 300k
+        preset: ultrafast
+        tune: zerolatency
+        profile: main
+        crf: 28
 
 definitions:
   get-webcam-data:
@@ -145,7 +151,6 @@ tasks:
       WEBCAM_NAME_DEF: *webcam_name_def
       WEBCAM_CFG: *webcam_cfg
       WEBCAM_NAME: *webcam_name
-      RTSP_URI: *rtsp_uri
       INPUT_FORMAT: '{{.WEBCAM_CFG | dig "input_format" "yuyv422"}}'
       FRAMERATE: '{{.WEBCAM_CFG | dig "framerate" .DEF_CFG.framerate}}'
       HW_ENCODER_V4L_PRODUCT: *hw_encoder_v4l_product
@@ -164,8 +169,6 @@ tasks:
         - ['num_capture_buffers:v', '{{.WEBCAM_CFG | dig "h264" "num_capture_buffers" .DEF_CFG.h264.num_capture_buffers}}']
         - ['num_output_buffers:v', '{{.WEBCAM_CFG | dig "h264" "num_output_buffers" .DEF_CFG.h264.num_output_buffers}}']
         - ['g:v', '{{.WEBCAM_CFG | dig "h264" "g" .FRAMERATE}}']
-        - ['b:v', '{{.WEBCAM_CFG | dig "h264" "b" .DEF_CFG.h264.b}}']
-        - ['bf:v', '{{.WEBCAM_CFG | dig "h264" "bf" .DEF_CFG.h264.bf}}']
         - '#h264-bsf'
         - [map_metadata, -1]
         - ['metadata:g', 'title={{.WEBCAM_NAME}}']
@@ -205,7 +208,7 @@ tasks:
       INPUT_FORMAT: '{{.WEBCAM_CFG | dig "input_format" "yuyv422"}}'
       FRAMERATE: '{{.WEBCAM_CFG | dig "framerate" .DEF_CFG.framerate}}'
       HW_ENCODER_V4L_PRODUCT: *hw_encoder_v4l_product
-      HW_ENCODER_NAME: *hw_encoder_name
+      HW_ENCODER_NAME: '{{.HW_ENCODER_V4L_PRODUCT | default "V4L2 mem2mem HEVC encoder"}}'
       FF_OPTS:
         - '#common'
         - '#discard'
@@ -220,8 +223,6 @@ tasks:
         - ['num_capture_buffers:v', '{{.WEBCAM_CFG | dig "h265" "num_capture_buffers" .DEF_CFG.h265.num_capture_buffers}}']
         - ['num_output_buffers:v', '{{.WEBCAM_CFG | dig "h265" "num_output_buffers" .DEF_CFG.h265.num_output_buffers}}']
         - ['g:v', '{{.WEBCAM_CFG | dig "h265" "g" .FRAMERATE}}']
-        - ['b:v', '{{.WEBCAM_CFG | dig "h265" "b" .DEF_CFG.h265.b}}']
-        - ['bf:v', '{{.WEBCAM_CFG | dig "h265" "bf" .DEF_CFG.h265.bf}}']
         - '#h265-bsf'
         - [map_metadata, -1]
         - ['metadata:g', 'title={{.WEBCAM_NAME}}']
@@ -262,8 +263,6 @@ tasks:
       RTSP_URI: *rtsp_uri
       INPUT_FORMAT: '{{.WEBCAM_CFG | dig "input_format" "yuyv422"}}'
       FRAMERATE: '{{.WEBCAM_CFG | dig "framerate" .DEF_CFG.framerate}}'
-      HW_ENCODER_V4L_PRODUCT: *hw_encoder_v4l_product
-      HW_ENCODER_NAME: *hw_encoder_name
       FF_OPTS:
         - '#common'
         - '#discard'
@@ -277,16 +276,14 @@ tasks:
         - ['c:v', libx264]
         - [pix_fmt, yuv420p]
         - '#video-overlay-filter'
-        - [preset, ultrafast]
-        - [tune, grain]
-        - ['g:v', '{{.WEBCAM_CFG | dig "h264" "g" .FRAMERATE}}']
-        - ['b:v', '{{.WEBCAM_CFG | dig "h264" "b" .DEF_CFG.h264.b}}']
-        - ['bf:v', '{{.WEBCAM_CFG | dig "h264" "bf" .DEF_CFG.h264.bf}}']
+        - [preset:v, '{{.WEBCAM_CFG | dig "h264" "preset" .DEF_CFG.h264.preset}}']
+        - [tune:v, '{{.WEBCAM_CFG | dig "h264" "tune" .DEF_CFG.h264.tune}}']
+        - [profile:v, '{{.WEBCAM_CFG | dig "h264" "profile" .DEF_CFG.h264.profile}}']
+        - [crf:v, '{{.WEBCAM_CFG | dig "h264" "crf" .DEF_CFG.h264.crf}}']
         - '#h264-bsf'
         - [map_metadata, -1]
         - ['metadata:g', 'title={{.WEBCAM_NAME}}']
         - ['metadata:s:v', 'title={{.WEBCAM_NAME}}']
-        - ['metadata:s:v', 'encoder={{.HW_ENCODER_NAME}}']
         - [f, mpegts]
       FF_ARGS:
         - 'unix:/run/mediamtx/{{.WEBCAM_PATH}}.sock'
@@ -322,8 +319,6 @@ tasks:
       RTSP_URI: *rtsp_uri
       INPUT_FORMAT: '{{.WEBCAM_CFG | dig "input_format" "yuyv422"}}'
       FRAMERATE: '{{.WEBCAM_CFG | dig "framerate" .DEF_CFG.framerate}}'
-      HW_ENCODER_V4L_PRODUCT: *hw_encoder_v4l_product
-      HW_ENCODER_NAME: *hw_encoder_name
       FF_OPTS:
         - '#common'
         - '#discard'
@@ -337,16 +332,14 @@ tasks:
         - ['c:v', libx265]
         - [pix_fmt, yuv420p]
         - '#video-overlay-filter'
-        - [preset, ultrafast]
-        - [tune, grain]
-        - ['g:v', '{{.WEBCAM_CFG | dig "h264" "g" .FRAMERATE}}']
-        - ['b:v', '{{.WEBCAM_CFG | dig "h264" "b" .DEF_CFG.h265.b}}']
-        - ['bf:v', '{{.WEBCAM_CFG | dig "h264" "bf" .DEF_CFG.h265.bf}}']
+        - ['preset:v', '{{.WEBCAM_CFG | dig "h265" "preset" .DEF_CFG.h265.preset}}']
+        - ['preset:v', '{{.WEBCAM_CFG | dig "h265" "tune" .DEF_CFG.h265.tune}}']
+        - ['profile:v', '{{.WEBCAM_CFG | dig "h265" "profile" .DEF_CFG.h265.profile}}']
+        - [crf:v, '{{.WEBCAM_CFG | dig "h265" "crf" .DEF_CFG.h265.crf}}']
         - '#h265-bsf'
         - [map_metadata, -1]
         - ['metadata:g', 'title={{.WEBCAM_NAME}}']
         - ['metadata:s:v', 'title={{.WEBCAM_NAME}}']
-        - ['metadata:s:v', 'encoder={{.HW_ENCODER_NAME}}']
         - [f, mpegts]
       FF_ARGS:
         - 'unix:/run/mediamtx/{{.WEBCAM_PATH}}.sock'

@@ -21,6 +21,13 @@ vars:
     {{$f := list -}}
     {{range .H264_FILTERS}}{{$f = append $f (. | replace "," "\\,")}}{{end -}}
     {{$f | join ","}}
+  H265_FILTERS:
+    - 'hevc_mp4toannexb'
+    - 'hevc_metadata=aud=remove'
+  H265_FILTERS_STR: >-
+    {{$f := list -}}
+    {{range .H265_FILTERS}}{{$f = append $f (. | replace "," "\\,")}}{{end -}}
+    {{$f | join ","}}    
   OVERLAY_FILTERS:
     - >-
       [0:v][1:v] overlay=
@@ -69,6 +76,8 @@ vars:
         - ['bsf:v', '{{.DISCARD_FILTER_STR}}']
       h264-bsf:
         - ['bsf:v', '{{.H264_FILTERS_STR}}']
+      h265-bsf:
+        - ['bsf:v', '{{.H265_FILTERS_STR}}']        
 
 tasks:
   cmdline:
