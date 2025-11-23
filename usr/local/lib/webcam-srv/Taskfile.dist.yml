@@ -19,6 +19,7 @@ vars:
         num_capture_buffers: 8
         num_output_buffers: 16
         b: 600k
+        g: 10
         preset: ultrafast
         tune: zerolatency
         profile: main
@@ -27,6 +28,7 @@ vars:
         num_capture_buffers: 8
         num_output_buffers: 16
         b: 300k
+        g: 10
         preset: ultrafast
         tune: zerolatency
         profile: main
@@ -163,11 +165,15 @@ tasks:
         - [input_format, '{{.INPUT_FORMAT}}']
         - [framerate, '{{.FRAMERATE}}']
         - [i, '{{.V4L_DEV}}']
+        - [framerate, '{{.FRAMERATE}}']
+        - '#video-overlay-input'
         - ['fps_mode:v', vfr]
         - ['c:v', h264_v4l2m2m]
         - [pix_fmt, yuv420p]
+        - '#video-overlay-filter'
         - ['num_capture_buffers:v', '{{.WEBCAM_CFG | dig "h264" "num_capture_buffers" .DEF_CFG.h264.num_capture_buffers}}']
         - ['num_output_buffers:v', '{{.WEBCAM_CFG | dig "h264" "num_output_buffers" .DEF_CFG.h264.num_output_buffers}}']
+        - ['b:v', '{{.WEBCAM_CFG | dig "h264" "b" .DEF_CFG.h264.b}}']
         - ['g:v', '{{.WEBCAM_CFG | dig "h264" "g" .FRAMERATE}}']
         - '#h264-bsf'
         - [map_metadata, -1]
@@ -182,15 +188,15 @@ tasks:
           runOnInit: '/bin/bash /run/mediamtx/{{.WEBCAM_PATH}}-on-init.sh'
           runOnInitRestart: true
           source: 'unix+mpegts:///run/mediamtx/{{.WEBCAM_PATH}}.sock'
-      cmds:
-        - task: ffmpeg:shell-script
-          vars:
-            FF_SCRIPT: '{{.WEBCAM_PATH}}-on-init.sh'
-            FF_OPTS:
-              ref: .FF_OPTS
-            FF_ARGS:
-              ref: .FF_ARGS
-        - cmd: echo {{dict .WEBCAM_PATH .PATH_DEF | toJson | b64enc | shellQuote}}
+    cmds:
+      - task: ffmpeg:shell-script
+        vars:
+          FF_SCRIPT: '{{.WEBCAM_PATH}}-on-init.sh'
+          FF_OPTS:
+            ref: .FF_OPTS
+          FF_ARGS:
+            ref: .FF_ARGS
+      - cmd: echo {{dict .WEBCAM_PATH .PATH_DEF | toJson | b64enc | shellQuote}}
 
   ffmpeg-hw-encode-h265:
     desc: >-
@@ -204,7 +210,6 @@ tasks:
       WEBCAM_NAME_DEF: *webcam_name_def
       WEBCAM_CFG: *webcam_cfg
       WEBCAM_NAME: *webcam_name
-      RTSP_URI: *rtsp_uri
       INPUT_FORMAT: '{{.WEBCAM_CFG | dig "input_format" "yuyv422"}}'
       FRAMERATE: '{{.WEBCAM_CFG | dig "framerate" .DEF_CFG.framerate}}'
       HW_ENCODER_V4L_PRODUCT: *hw_encoder_v4l_product
@@ -217,11 +222,15 @@ tasks:
         - [input_format, '{{.INPUT_FORMAT}}']
         - [framerate, '{{.FRAMERATE}}']
         - [i, '{{.V4L_DEV}}']
+        - [framerate, '{{.FRAMERATE}}']
+        - '#video-overlay-input'
         - ['fps_mode:v', vfr]
         - ['c:v', hevc_v4l2m2m]
         - [pix_fmt, yuv420p]
+        - '#video-overlay-filter'
         - ['num_capture_buffers:v', '{{.WEBCAM_CFG | dig "h265" "num_capture_buffers" .DEF_CFG.h265.num_capture_buffers}}']
         - ['num_output_buffers:v', '{{.WEBCAM_CFG | dig "h265" "num_output_buffers" .DEF_CFG.h265.num_output_buffers}}']
+        - ['b:v', '{{.WEBCAM_CFG | dig "h265" "b" .DEF_CFG.h265.b}}']
         - ['g:v', '{{.WEBCAM_CFG | dig "h265" "g" .FRAMERATE}}']
         - '#h265-bsf'
         - [map_metadata, -1]
@@ -236,15 +245,15 @@ tasks:
           runOnInit: '/bin/bash /run/mediamtx/{{.WEBCAM_PATH}}-on-init.sh'
           runOnInitRestart: true
           source: 'unix+mpegts:///run/mediamtx/{{.WEBCAM_PATH}}.sock'
-      cmds:
-        - task: ffmpeg:shell-script
-          vars:
-            FF_SCRIPT: '{{.WEBCAM_PATH}}-on-init.sh'
-            FF_OPTS:
-              ref: .FF_OPTS
-            FF_ARGS:
-              ref: .FF_ARGS
-        - cmd: echo {{dict .WEBCAM_PATH .PATH_DEF | toJson | b64enc | shellQuote}}
+    cmds:
+      - task: ffmpeg:shell-script
+        vars:
+          FF_SCRIPT: '{{.WEBCAM_PATH}}-on-init.sh'
+          FF_OPTS:
+            ref: .FF_OPTS
+          FF_ARGS:
+            ref: .FF_ARGS
+      - cmd: echo {{dict .WEBCAM_PATH .PATH_DEF | toJson | b64enc | shellQuote}}
 
   ffmpeg-encode-h264:
     desc: >-
@@ -260,7 +269,6 @@ tasks:
       WEBCAM_NAME_DEF: *webcam_name_def
       WEBCAM_CFG: *webcam_cfg
       WEBCAM_NAME: *webcam_name
-      RTSP_URI: *rtsp_uri
       INPUT_FORMAT: '{{.WEBCAM_CFG | dig "input_format" "yuyv422"}}'
       FRAMERATE: '{{.WEBCAM_CFG | dig "framerate" .DEF_CFG.framerate}}'
       FF_OPTS:
@@ -271,6 +279,7 @@ tasks:
         - [input_format, '{{.INPUT_FORMAT}}']
         - [framerate, '{{.FRAMERATE}}']
         - [i, '{{.V4L_DEV}}']
+        - [framerate, '{{.FRAMERATE}}']
         - '#video-overlay-input'
         - ['fps_mode:v', vfr]
         - ['c:v', libx264]
@@ -280,6 +289,7 @@ tasks:
         - [tune:v, '{{.WEBCAM_CFG | dig "h264" "tune" .DEF_CFG.h264.tune}}']
         - [profile:v, '{{.WEBCAM_CFG | dig "h264" "profile" .DEF_CFG.h264.profile}}']
         - [crf:v, '{{.WEBCAM_CFG | dig "h264" "crf" .DEF_CFG.h264.crf}}']
+        - ['g:v', '{{.WEBCAM_CFG | dig "h264" "g" .FRAMERATE}}']
         - '#h264-bsf'
         - [map_metadata, -1]
         - ['metadata:g', 'title={{.WEBCAM_NAME}}']
@@ -327,27 +337,28 @@ tasks:
         - [input_format, '{{.INPUT_FORMAT}}']
         - [framerate, '{{.FRAMERATE}}']
         - [i, '{{.V4L_DEV}}']
+        - [framerate, '{{.FRAMERATE}}']
         - '#video-overlay-input'
         - ['fps_mode:v', vfr]
         - ['c:v', libx265]
         - [pix_fmt, yuv420p]
         - '#video-overlay-filter'
         - ['preset:v', '{{.WEBCAM_CFG | dig "h265" "preset" .DEF_CFG.h265.preset}}']
-        - ['preset:v', '{{.WEBCAM_CFG | dig "h265" "tune" .DEF_CFG.h265.tune}}']
+        - ['tune:v', '{{.WEBCAM_CFG | dig "h265" "tune" .DEF_CFG.h265.tune}}']
         - ['profile:v', '{{.WEBCAM_CFG | dig "h265" "profile" .DEF_CFG.h265.profile}}']
         - [crf:v, '{{.WEBCAM_CFG | dig "h265" "crf" .DEF_CFG.h265.crf}}']
+        - ['g:v', '{{.WEBCAM_CFG | dig "h264" "g" .FRAMERATE}}']
         - '#h265-bsf'
         - [map_metadata, -1]
         - ['metadata:g', 'title={{.WEBCAM_NAME}}']
         - ['metadata:s:v', 'title={{.WEBCAM_NAME}}']
-        - [f, mpegts]
+        - '#rtsp'
       FF_ARGS:
-        - 'unix:/run/mediamtx/{{.WEBCAM_PATH}}.sock'
+        - '{{.RTSP_URI}}'
       PATH_DEF:
         map:
           runOnInit: '/bin/bash /run/mediamtx/{{.WEBCAM_PATH}}-on-init.sh'
           runOnInitRestart: true
-          source: 'unix+mpegts:///run/mediamtx/{{.WEBCAM_PATH}}.sock'
     cmds:
       - task: ffmpeg:shell-script
         vars:
@@ -370,18 +381,12 @@ tasks:
         ref: fromYaml .WEBCAM_CONFIG_STR
       WEBCAMS:
         ref: get .WEBCAM_CONFIG "webcams"
-      USE_HW_H264_ENCODER:
-        ref: .WEBCAM_CONFIG | dig "webcam-srv" "use-hw-h264-encoder" false
     cmds:
       - for: { var: WEBCAMS }
         task: >-
           {{$enable := .ITEM | dig "enable" true -}}
           {{if $enable | kindIs "bool" | not }}{{fail "\"enable\" must have a boolean value"}}{{end -}}
-          {{$utility := .ITEM | dig "utility" "ffmpeg" -}}
-          {{$use_hw_h264_encoder := .USE_HW_H264_ENCODER -}}
-          {{if hasKey .ITEM "use-hw-h264-encoder"}}{{$use_hw_h264_encoder := get .ITEM "use-hw-h264-encoder"}}{{end -}}
-          {{if $use_hw_h264_encoder | kindIs "bool" | not }}{{fail "\"use-hw-h264-encoder\" must have a boolean value"}}{{end -}}
-          {{if $enable}}{{$utility}}-{{if $use_hw_h264_encoder}}hw-{{end}}{{.ITEM | dig "mode" "capture"}}{{else}}webcam-disabled{{end -}}
+          {{if $enable}}{{.ITEM | dig "utility" "ffmpeg"}}-{{.ITEM | dig "mode" "capture"}}{{else}}webcam-disabled{{end -}}
         vars:
           WEBCAM_PATH: '{{.KEY}}'
           WEBCAM_JSON: '{{toJson .ITEM}}'

@@ -1,8 +1,8 @@
 logLevel: info
 logDestinations: [stdout]
 
-readTimeout: 5s
-writeTimeout: 5s
+readTimeout: 30s
+writeTimeout: 30s
 writeQueueSize: 128
 udpMaxPayloadSize: 1472
 
@@ -52,8 +52,6 @@ hlsMuxerCloseAfter: 60s
 webrtc: true
 webrtcAddress: :8889
 webrtcEncryption: false
-webrtcAllowOrigin: '*'
-webrtcLocalUDPAddress: :8189
 webrtcIPsFromInterfaces: true
 webrtcHandshakeTimeout: 10s
 webrtcTrackGatherTimeout: 2s

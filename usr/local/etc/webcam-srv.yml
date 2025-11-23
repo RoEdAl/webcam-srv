@@ -1,5 +1,5 @@
 webcam-srv:
-  use-hw-h264-encoder: false
+  hw-h264-encoder: /dev/video11
 
 webcams:
   cam1:
