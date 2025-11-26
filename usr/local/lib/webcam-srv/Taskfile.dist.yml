@@ -372,6 +372,42 @@ tasks:
   webcam-disabled:
     internal: false
 
+  webcam-symlink:
+    internal: true
+    requires:
+      vars:
+        - WEBCAM
+    vars:
+      V4L2DEV:
+        sh: readlink -nf /dev/v4l/{{.WEBCAM}}
+      PAIR: [ '{{.WEBCAM}}', '{{.V4L2DEV}}']
+    cmds:
+      - echo {{.PAIR | toJson | b64enc | shellQuote}}
+
+  list-webcams:
+    vars:
+      WEBCAMS:
+        sh: find /dev/v4l -maxdepth 1 -type l -printf '%P\n'
+    cmds:
+      - for: { var: WEBCAMS }
+        task: webcam-symlink
+        vars:
+          WEBCAM: '{{.ITEM}}'
+
+  show-webcams-devs:
+    vars:
+      WEBCAM_LIST:
+        sh: '{{.TASK_EXE}} -x -s -d {{.TASKFILE_DIR}} list-webcams'
+      WEBCAM_DEVS:
+        map: {}
+    cmds:
+      - for: { var: WEBCAM_LIST }
+        cmd: >-
+          {{$item := .ITEM | b64dec | fromJson}}
+          {{$_ := set .WEBCAM_DEVS (index $item 0) (index $item 1) -}}
+          true
+      - echo {{.WEBCAM_DEVS | toJson | shellQuote}}
+
   webcam-paths:
     desc: Webcam paths
     vars:
@@ -379,12 +415,22 @@ tasks:
         sh: cat {{joinPath (.DSTDIR | default "") .WEBCAM_CONFIG_PATH}}
       WEBCAM_CONFIG:
         ref: fromYaml .WEBCAM_CONFIG_STR
+      DEV_LIST:
+        sh: '{{.TASK_EXE}} -x -s -d {{.TASKFILE_DIR}} list-webcams'
+      WEBCAM_DEVS:
+        map: {}
       WEBCAMS:
         ref: get .WEBCAM_CONFIG "webcams"
     cmds:
+      - for: { var: DEV_LIST }
+        cmd: >-
+          {{$item := .ITEM | b64dec | fromJson}}
+          {{$_ := set .WEBCAM_DEVS (index $item 0) (index $item 1) -}}
+          true
       - for: { var: WEBCAMS }
         task: >-
-          {{$enable := .ITEM | dig "enable" true -}}
+          {{$enable := .ITEM | dig "enable" "auto" -}}
+          {{if $enable | eq "auto"}}{{$enable = hasKey .WEBCAM_DEVS .KEY}}{{end -}}
           {{if $enable | kindIs "bool" | not }}{{fail "\"enable\" must have a boolean value"}}{{end -}}
           {{if $enable}}{{.ITEM | dig "utility" "ffmpeg"}}-{{.ITEM | dig "mode" "capture"}}{{else}}webcam-disabled{{end -}}
         vars:
@@ -416,12 +462,22 @@ tasks:
         sh: cat {{joinPath (.DSTDIR | default "") .WEBCAM_CONFIG_PATH}}
       WEBCAM_CONFIG:
         ref: fromYaml .WEBCAM_CONFIG_STR
+      DEV_LIST:
+        sh: '{{.TASK_EXE}} -x -s -d {{.TASKFILE_DIR}} list-webcams'
+      WEBCAM_DEVS:
+        map: {}        
       WEBCAMS:
         ref: get .WEBCAM_CONFIG "webcams"
     cmds:
+      - for: { var: DEV_LIST }
+        cmd: >-
+          {{$item := .ITEM | b64dec | fromJson}}
+          {{$_ := set .WEBCAM_DEVS (index $item 0) (index $item 1) -}}
+          true
       - for: { var: WEBCAMS }
         task: >-
-          {{$enable := .ITEM | dig "enable" true -}}
+          {{$enable := .ITEM | dig "enable" "auto" -}}
+          {{if $enable | eq "auto"}}{{$enable = hasKey .WEBCAM_DEVS .KEY}}{{end -}}
           {{if $enable | kindIs "bool" | not }}{{fail "\"enable\" must have a boolean value"}}{{end -}}
           {{if hasKey .ITEM "ctrls" | and $enable}}internal-webcam-ctrls{{else}}webcam-disabled{{end}}
         vars:
