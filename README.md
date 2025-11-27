@@ -13,15 +13,15 @@
 * Clone repository:
 
   ```sh
-  $ git clone https://github.com/RoEdAl/webcam-srv.git
+  git clone https://github.com/RoEdAl/webcam-srv.git
   ```
 
 * Install *webcam-srv*:
 
   ```sh
-  $ cd webcam-srv
-  $ sudo task install
-  $ sudo reboot
+  cd webcam-srv
+  sudo task install
+  sudo reboot
   ```
 
 * Obtain *VID* and *PID* of your webcam and add appropiate *udev* rule in `/usr/local/lib/udev/rules.d/80-v4l-ids.rules` file:
@@ -41,16 +41,37 @@
 
 * Edit configuration file of *webcam-srv*:
   
-    ````
+    ````sh
     sudo nano /usr/local/etc/webcam-srv.yml
     ````
 
 * Run *MediaMTX* server.
 
     ```sh
-    $ sudo systemctl start mediamtx
+    sudo systemctl start mediamtx
     ```
 
 ## Configuration file
 
-**TODO**
+* Location: `/usr/local/etc/webcam-srv.yml`.
+* Structure:
+
+  ```yaml
+  webcams:
+    webcam1: # -> /dev/v4l/webcam1
+      ...
+    
+    webcam2: # -> /dev/v4l/webcam2
+      ...
+  ```
+
+* Configuration options:
+
+  | Option | Description |  Default value |
+  | :--    | :--         | :-- |
+  | `mode` | Operation mode. Possible values: `capture`, `encode-h264`, `hw-encode-h264`. | `capture` |
+  | `video_size` | Size of captured video.  | `vga` |
+  | `input_format` | Format of input format. | `yuyv422` or `mjpeg` |
+  | `framerate` | Framerate of captured stream. | 10 |
+  | `h264` | H.264 encoder options. |
+  | `ctrls` | Values of V4L2 device controls. |
