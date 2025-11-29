@@ -55,7 +55,7 @@ webcams:
   
   trust:
     mode: encode-h264
-    framerate: 10
+    framerate: 30
     ctrls:
       brightness: 15
       contrast: 40
@@ -68,8 +68,8 @@ webcams:
       sharpness: 4
       backlight_compensation: 0
     h264:
-      b: 400k
-      g: 30
+      b: 800k
+      g: 15
 
   easycap:
     mode: capture
