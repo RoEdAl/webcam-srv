@@ -57,6 +57,7 @@ vars:
         - hide_banner
         - [loglevel, 'repeat+info']
         - nostats
+        - nostdin
         - copyts
         - [filter_threads, 1]
         - [filter_complex_threads, 1]
