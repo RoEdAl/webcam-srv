@@ -4,9 +4,9 @@
 
 ## Requirements
 
-* [MediaMTX](https://mediamtx.org/) server,
-* *ffmpeg* utility.
-* [go-task](https://github.com/go-task/task)
+* [MediaMTX](https://mediamtx.org/) (version > 1.15) server,
+* *ffmpeg* (version >= 7.0) utility,
+* [go-task](https://github.com/go-task/task) (version > 3.44).
 
 ## Installation
 
